@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ title if title else "Smart Restaurant" }}</title>
+    <title>{{ title or "Smart Restaurant" }}</title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
     <!-- Tailwind CSS -->
@@ -12,21 +12,20 @@
     <!-- Swiper CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 </head>
-
 <body class="bg-white">
+
     <!-- Navbar -->
     <nav class="flex justify-between items-center bg-gray-100 p-4 mb-6">
         <div class="space-x-4">
             <a href="{{ url_for('home') }}" class="text-red-500 font-bold">Home</a>
             <a href="{{ url_for('menu') }}" class="text-red-500 font-bold">Menu</a>
-            <a href="{{ url_for('contact') }}" class="text-red-500 font-bold">Contact</a>
         </div>
 
         <div class="relative">
             <a href="{{ url_for('cart') }}" class="text-red-500 font-bold flex items-center">
                 🛒 Cart
                 <span id="cart-count" class="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    {% if session.cart %}{{ session.cart|length }}{% else %}0{% endif %}
+                    {{ session.cart|length if session.cart else 0 }}
                 </span>
             </a>
         </div>
@@ -35,7 +34,7 @@
     <!-- Flash/Notification -->
     <div id="flash-message" class="hidden fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-50"></div>
 
-    <!-- Page content -->
+    <!-- Page Content -->
     <main class="p-6">
         {% block content %}{% endblock %}
     </main>
@@ -49,13 +48,15 @@
             const flash = document.getElementById("flash-message");
             flash.textContent = message;
             flash.classList.remove("hidden");
-            setTimeout(() => {
-                flash.classList.add("hidden");
-            }, 2000);
+            setTimeout(() => flash.classList.add("hidden"), 2000);
         }
 
         async function addToCart(itemId) {
-            const response = await fetch(`/add-to-cart/${itemId}`, { method: "POST" });
+            const response = await fetch(`/add-to-cart/${itemId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ quantity: 1 })
+            });
             const data = await response.json();
             if (data.success) {
                 document.getElementById("cart-count").textContent = data.cart_count;
