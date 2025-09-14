@@ -7,7 +7,6 @@ This is a full-stack Python web application for a smart restaurant, built with t
 * **Menu Display:** Browse and view all available menu items.
 * **Order Management:** Place new orders and track their status.
 * **Database Integration:** Data for orders and menu items is stored efficiently using SQLite.
-* **Responsive Design:** The user interface is fully responsive and works on all devices, from desktops to mobile phones.
 * **Admin Panel:** Manage menu items and orders with Flask-Admin.
 * **Cart Functionality:** Add items to a mini-cart, update quantities, or remove items before checkout.
 
