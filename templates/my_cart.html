@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto px-6 py-6">
+    <div class="bg-white shadow-lg rounded-xl p-6">
+        <h2 class="text-xl font-bold mb-4">🛒 My Cart</h2>
+
+        <div id="cart-items">
+            {% if not session.cart %}
+                <p class="text-gray-500">No items in cart yet.</p>
+            {% else %}
+                {% for id, item in session.cart.items() %}
+                <div class="flex items-center justify-between mb-3 border-b pb-2">
+                    
+                    <!-- Left: Product Image + Details -->
+                    <div class="flex items-center gap-4">
+                        <img src="{{ url_for('static', filename='uploads/' ~ item.image) }}"
+                             alt="{{ item.name }}"
+                             class="w-16 h-16 object-cover rounded">
+                        <div>
+                            <p class="font-medium">{{ item.name }}</p>
+                            <p class="text-sm text-gray-500">₹{{ item.price }} x {{ item.quantity }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Quantity Controls -->
+                    <div class="flex items-center gap-2">
+                        <form method="post" action="{{ url_for('update_cart', item_id=id) }}">
+                            <input type="hidden" name="change" value="-1">
+                            <button type="submit" class="px-2 bg-gray-300 rounded">-</button>
+                        </form>
+                        <span>{{ item.quantity }}</span>
+                        <form method="post" action="{{ url_for('update_cart', item_id=id) }}">
+                            <input type="hidden" name="change" value="1">
+                            <button type="submit" class="px-2 bg-gray-300 rounded">+</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        {% if session.cart %}
+        <!-- Cart summary -->
+        <div class="mt-6">
+            <div class="flex justify-between mb-2">
+                <span>Subtotal</span>
+                <span>₹{{ subtotal }}</span>
+            </div>
+            <div class="flex justify-between mb-2">
+                <span>Discount</span>
+                <span>0%</span>
+            </div>
+            <div class="flex justify-between font-bold text-lg">
+                <span>Total</span>
+                <span>₹{{ subtotal }}</span>
+            </div>
+            <button class="mt-4 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg">
+                Confirm Order
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

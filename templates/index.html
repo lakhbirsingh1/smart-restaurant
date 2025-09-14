@@ -1,17 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-
-    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
-
-</head>
-
-<body>
-
-</body>
-
-</html>
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center justify-center flex-col">
+    <img src="static/src/images/rest.png" alt="img" class="w-80">
+    <h1 class="text-4xl font-bold text-gray-800">Welcome to Smart Restaurant 🍽️</h1>
+    <p class="mt-4 text-lg text-gray-600">Your digital restaurant experience starts here.</p>
+</div>
+{% endblock %}

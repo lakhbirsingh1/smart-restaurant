@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid grid-cols-3 gap-6">
+
+    <div class="col-span-2">
+        <h1 class="text-2xl font-bold mb-4">Menu</h1>
+
+        {% if items %}
+        <div id="main-item" class="bg-white rounded-xl p-6 mb-8 text-center">
+            <div class="flex items-start justify-between gap-6">
+                <div class="flex-[100vw]">
+                    <img id="main-image"
+                         src="{{ url_for('static', filename='uploads/' ~ items[0].image) }}"
+                         alt="{{ items[0].name }}"
+                         class="w-full object-cover mx-auto rounded-lg mb-4">
+                </div>
+
+                <div class="flex flex-col text-left gap-3 my-3">
+                    <h2 id="main-name" class="text-4xl font-bold">{{ items[0].name }}</h2>
+                    <p id="main-description" class="text-gray-600 mb-3">{{ items[0].description }}</p>
+                    <p class="text-lg font-semibold text-red-500">₹<span id="main-price">{{ items[0].price }}</span></p>
+                    <div class="flex items-center gap-3">
+                        <button onclick="decreaseQty()" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">-</button>
+                        <span id="main-qty">1</span>
+                        <button onclick="increaseQty()" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">+</button>
+                        <button onclick="addMainToCart()" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition">
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <h2 class="mb-3 font-semibold text-lg">Recommended Items</h2>
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+                {% for item in items %}
+                <div class="swiper-slide bg-gray-200 rounded-xl p-4 text-center">
+                    <img src="{{ url_for('static', filename='uploads/' ~ item.image) }}"
+                         alt="{{ item.name }}"
+                         class="w-32 h-32 object-cover mx-auto mb-2 rounded">
+                    <strong>{{ item.name }}</strong> - ₹{{ item.price }} <br>
+                    <p class="text-sm text-gray-600 line-clamp-2 mb-3">{{ item.description }}</p>
+
+                    <button onclick="addToCart('{{ item.id }}')" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        Add to Cart
+                    </button>
+
+                    <button onclick="setMainItem('{{ item.id }}', '{{ item.name }}', '{{ item.description }}', '{{ item.price }}', '{{ url_for('static', filename='uploads/' ~ item.image) }}')" class="mt-2 ml-2 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                        View
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-span-1 bg-white shadow-lg rounded-xl p-4 sticky top-0">
+        <h2 class="text-xl font-bold flex items-center justify-between">
+            My Cart
+            <span id="mini-cart-count" class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                {% if session.cart %}{{ session.cart|length }}{% else %}0{% endif %}
+            </span>
+        </h2>
+
+        <p id="empty-cart-message" class="text-gray-500 mt-4 {% if session.cart %}hidden{% endif %}">No items yet.</p>
+        <ul id="mini-cart-list" class="mt-4 space-y-3 {% if not session.cart %}hidden{% endif %}">
+            {% for id, item in session.cart.items() %}
+            <li class="flex items-center justify-between border-2 border-dashed p-4 rounded-xl" data-item-id="{{ id }}">
+                <div>
+                    <p class="font-medium">{{ item.name }}</p>
+                    <p class="text-sm text-gray-600">₹{{ item.price }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <form method="post" action="{{ url_for('update_cart', item_id=id) }}">
+                        <input type="hidden" name="change" value="-1">
+                        <button type="submit" class="px-2 bg-gray-300 rounded">-</button>
+                    </form>
+                    <span>{{ item.quantity }}</span>
+                    <form method="post" action="{{ url_for('update_cart', item_id=id) }}">
+                        <input type="hidden" name="change" value="1">
+                        <button type="submit" class="px-2 bg-gray-300 rounded">+</button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="mt-8 text-right">
+            <a href="{{ url_for('cart') }}" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                View Full Cart →
+            </a>
+        </div>
+    </div>
+</div>
+
+<div id="popover" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform scale-0 opacity-0 origin-bottom">
+    Item added successfully!
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let mainQty = 1;
+    let mainItemId = "{{ items[0].id if items else '' }}";
+    let isPopoverVisible = false;
+
+    function increaseQty() {
+        mainQty++;
+        document.getElementById("main-qty").innerText = mainQty;
+    }
+
+    function decreaseQty() {
+        if (mainQty > 1) {
+            mainQty--;
+            document.getElementById("main-qty").innerText = mainQty;
+        }
+    }
+
+    function setMainItem(id, name, desc, price, image) {
+        mainItemId = id;
+        mainQty = 1;
+        document.getElementById("main-image").src = image;
+        document.getElementById("main-name").innerText = name;
+        document.getElementById("main-description").innerText = desc;
+        document.getElementById("main-price").innerText = price;
+        document.getElementById("main-qty").innerText = 1;
+    }
+
+    function addMainToCart() {
+        fetch(`/add-to-cart/${mainItemId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quantity: mainQty })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                updateCartUI(data);
+                if (data.new_item) {
+                    renderMiniCartItem(data.new_item);
+                }
+                showPopover(data.message);
+            }
+        })
+        .catch(err => console.error("Error:", err));
+    }
+
+    function addToCart(itemId) {
+        const itemQty = 1;
+        fetch(`/add-to-cart/${itemId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quantity: itemQty })
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                updateCartUI(data);
+                if (data.new_item) {
+                    renderMiniCartItem(data.new_item);
+                }
+                showPopover(data.message);
+            }
+        })
+        .catch(err => console.error("Error:", err));
+    }
+
+    function updateCartUI(data) {
+        document.getElementById("mini-cart-count").innerText = data.cart_count;
+        const emptyMessage = document.getElementById("empty-cart-message");
+        const cartList = document.getElementById("mini-cart-list");
+        
+        if (data.cart_count > 0) {
+            emptyMessage.classList.add("hidden");
+            cartList.classList.remove("hidden");
+        } else {
+            emptyMessage.classList.remove("hidden");
+            cartList.classList.add("hidden");
+        }
+    }
+    
+    function renderMiniCartItem(item) {
+        const cartList = document.getElementById("mini-cart-list");
+        let existingItem = cartList.querySelector(`[data-item-id="${item.id}"]`);
+
+        if (existingItem) {
+            const quantitySpan = existingItem.querySelector('span');
+            let currentQty = parseInt(quantitySpan.innerText, 10);
+            quantitySpan.innerText = currentQty + item.quantity;
+        } else {
+            const listItem = document.createElement("li");
+            listItem.classList.add("flex", "items-center", "justify-between", "border", "border-dashed", "p-4", "rounded-xl");
+            listItem.setAttribute("data-item-id", item.id);
+            
+            const html = `
+                <div>
+                    <p class="font-medium">${item.name}</p>
+                    <p class="text-sm text-gray-600">₹${item.price}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <form method="post" action="/update-cart/${item.id}">
+                        <input type="hidden" name="change" value="-1">
+                        <button type="submit" class="px-2 bg-gray-300 rounded">-</button>
+                    </form>
+                    <span>${item.quantity}</span>
+                    <form method="post" action="/update-cart/${item.id}">
+                        <input type="hidden" name="change" value="1">
+                        <button type="submit" class="px-2 bg-gray-300 rounded">+</button>
+                    </form>
+                </div>
+            `;
+            listItem.innerHTML = html;
+            cartList.appendChild(listItem);
+        }
+    }
+
+    function showPopover(message) {
+        // Prevent showing a new popover if one is already visible
+        if (isPopoverVisible) {
+            return;
+        }
+
+        const popover = document.getElementById("popover");
+        popover.innerText = message;
+        isPopoverVisible = true;
+        
+        popover.classList.remove("scale-0", "opacity-0");
+        popover.classList.add("scale-100", "opacity-100");
+        
+        setTimeout(() => {
+            popover.classList.remove("scale-100", "opacity-100");
+            popover.classList.add("scale-0", "opacity-0");
+            isPopoverVisible = false; // Reset the flag after the transition is complete
+        }, 3000);
+    }
+    
+    // ✅ Swiper setup
+    var swiper = new Swiper(".mySwiper", {
+        slidesPerView: 3,
+        spaceBetween: 20,
+        grabCursor: true,
+        freeMode: true,
+        breakpoints: {
+            320: { slidesPerView: 1, spaceBetween: 10 },
+            640: { slidesPerView: 2, spaceBetween: 15 },
+            1024: { slidesPerView: 3, spaceBetween: 20 }
+        }
+    });
+</script>
+
+{% endblock %}

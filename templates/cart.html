@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto mt-10">
+    <h1 class="text-3xl font-bold text-center mb-8">Your Cart</h1>
+    
+    {% if not cart_items %}
+    <div class="text-center text-gray-500">
+        <p class="text-xl">Your cart is empty.</p>
+        <a href="{{ url_for('menu') }}" class="mt-4 inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            Go to Menu
+        </a>
+    </div>
+    {% else %}
+    <div class="bg-white shadow-lg rounded-xl p-6 md:p-8">
+        <ul id="cart-items-list" class="space-y-6">
+            {% for id, item in cart_items.items() %}
+            <li class="flex items-center gap-6 border-b pb-6" data-item-id="{{ id }}">
+                <img src="{{ url_for('static', filename='uploads/' ~ item['image']) }}" alt="{{ item['name'] }}"
+                    class="w-24 h-24 object-cover rounded-lg">
+
+                <div class="flex-1">
+                    <h3 class="text-xl font-semibold">{{ item['name'] }}</h3>
+                    <p class="text-lg text-red-500">₹{{ item['price'] }}</p>
+                    <p class="text-gray-600">Quantity: {{ item['quantity'] }}</p>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <form method="post" action="{{ url_for('update_cart', item_id=id) }}">
+                        <input type="hidden" name="change" value="-1">
+                        <button type="submit" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">-</button>
+                    </form>
+                    <span class="text-lg font-bold">{{ item['quantity'] }}</span>
+                    <form method="post" action="{{ url_for('update_cart', item_id=id) }}">
+                        <input type="hidden" name="change" value="1">
+                        <button type="submit" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">+</button>
+                    </form>
+                    <button onclick="removeFromCart({{ id }})" class="text-red-500 hover:text-red-700 font-bold ml-4 text-2xl">
+                        &times;
+                    </button>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="mt-6 text-right">
+            <a href="#" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                Proceed to Checkout →
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div id="popover" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform scale-0 opacity-0 origin-bottom">
+    Item removed successfully!
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function removeFromCart(itemId) {
+        fetch(`/remove-from-cart/${itemId}`, {
+            method: "POST"
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+                if (itemElement) {
+                    itemElement.remove();
+                }
+
+                showPopover(data.message);
+                
+                const cartList = document.getElementById("cart-items-list");
+                if (cartList.children.length === 0) {
+                     window.location.reload(); 
+                }
+            }
+        })
+        .catch(err => console.error("Error:", err));
+    }
+
+    function showPopover(message) {
+        const popover = document.getElementById("popover");
+        popover.innerText = message;
+        
+        popover.classList.remove("scale-0", "opacity-0");
+        popover.classList.add("scale-100", "opacity-100");
+        
+        setTimeout(() => {
+            popover.classList.remove("scale-100", "opacity-100");
+            popover.classList.add("scale-0", "opacity-0");
+        }, 3000);
+    }
+</script>
+{% endblock %}
